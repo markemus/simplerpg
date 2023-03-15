@@ -1,0 +1,16 @@
+This is a personal passion project of mine that is meant to be easy to program.
+
+It is also meant to be fun.
+
+How fun it is, and how easy it is, remains to be seen. I'm just starting out.
+
+So far it's been both. I hope you enjoy it as well.
+
+My goals are to practice writing "good code" and also to practice unit testing. Check out test_index.py to see the tests
+(at the moment it is still that small).
+
+I can't promise to update this readme. That's not one of the specifications I've set for myself.
+Good code, good tests, hopefully fun. Enjoy!
+
+To run:
+python3 index.py from the linux command line.
