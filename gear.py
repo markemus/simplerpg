@@ -2,6 +2,7 @@ from enum import Enum, auto
 class Attaches(Enum):
     r_hand = "right hand"
     l_hand = "left hand"
+    test = "test"
 
 
 class Gear:
@@ -44,6 +45,12 @@ class Shield(Gear):
 
     def __repr__(self):
         return "b"
+
+class TestWeapon(Gear):
+    def __init__(self):
+        super().__init__()
+        self.attaches = Attaches.test
+        self.name = "test_weapon"
 
 # This gear can spawn
 gear_list = [Sword, Shield]

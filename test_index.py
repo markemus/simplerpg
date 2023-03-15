@@ -3,6 +3,8 @@ import pytest
 
 import creatures as c
 import gear as g
+import utils as u
+from unittest import mock
 from custom_exceptions import *
 
 
@@ -31,20 +33,22 @@ class TestEmpty:
     # @pytest.mark.skip
     def test_pickup_gear(self):
         """The player should pick up gear when walking over it."""
-        assert len(self.model.floor_gear) == 0
+        assert len(self.model.floor_items) == 0
         sword = g.Sword()
         sword.pos = (3,2)
-        self.model.floor_gear.append(sword)
+        self.model.floor_items.append(sword)
         self.controller.move(self.model.player, "w")
-        assert sword not in self.model.floor_gear
+        assert sword not in self.model.floor_items
         assert sword in self.model.player.items
 
     # @pytest.mark.skip
-    def test_floor_gear(self):
+    def test_floor_items(self):
         """Gear should be dropped on the floor."""
-        assert len(self.model.floor_gear) == 0
+        assert len(self.model.floor_items) == 0
         sword = g.Sword()
         shield = g.Shield()
+        self.model.player.items.append(sword)
+        self.model.player.items.append(shield)
         self.controller.equip(self.model.player, sword)
         self.controller.equip(self.model.player, shield)
         self.controller.create_creature()
@@ -53,8 +57,8 @@ class TestEmpty:
         self.controller.move_toward(self.model.player, self.model.creatures[1])
         self.controller.move_toward(self.model.player, self.model.creatures[1])
         self.controller.move_toward(self.model.player, self.model.creatures[1])
-        # assert len(self.model.floor_gear) == 1
-        # assert self.model.floor_gear[0].pos == (3,2)
+        # assert len(self.model.floor_items) == 1
+        # assert self.model.floor_items[0].pos == (3,2)
 
     def test_move_towards(self):
         """Assure that creatures can move towards one another properly."""
@@ -116,9 +120,11 @@ class TestEmpty:
         assert self.model.player.damage == 3
         assert self.model.player.armor == 2
         sword = g.Sword()
-        # TODO test that spear is NOT equipped after sword
         spear = g.Spear()
         shield = g.Shield()
+        self.model.player.items.append(sword)
+        self.model.player.items.append(shield)
+        self.model.player.items.append(spear)
         # equip
         assert len(self.model.player.equipment) == 0
         self.controller.equip(self.model.player, sword)
@@ -138,6 +144,16 @@ class TestEmpty:
         # Try to unequip gear again
         with pytest.raises(ValueError) as e_notequipped:
             self.controller.unequip(self.model.player, sword)
+
+    # @pytest.mark.skip
+    # @mock.patch("index.input", side_effects=["0"])
+    def test_equip_command(self):
+        t_weapon = g.TestWeapon()
+        index.input = lambda _: "0"
+        self.model.player.items.append(t_weapon)
+        # index.input = u.iter_cmds(["e", "0"])
+        self.controller.equip_cmd()
+        assert t_weapon in self.model.player.equipment
 
 class TestPopulated:
     """These tests need a normal populated level."""

@@ -5,8 +5,8 @@ import random
 import numpy as np
 
 import creatures as c
-import gear
 import gear as g
+import utils as u
 from custom_exceptions import *
 
 # Globals
@@ -19,7 +19,7 @@ class Model:
         self.player = c.Player()
         self.creatures = [self.player]
         self.board = np.zeros((5, 5), dtype=object)
-        self.floor_gear = []
+        self.floor_items = []
 
     def add_creature(self, creature):
         self.creatures.append(creature)
@@ -34,7 +34,9 @@ class Controller:
             "a": lambda: self.move(self.model.player, "a"),
             "s": lambda: self.move(self.model.player, "s"),
             "d": lambda: self.move(self.model.player, "d"),
-            "inv": self.show_inventory
+            "inv": self.show_inventory,
+            "eq": self.show_equipment,
+            "e": self.equip_cmd,
         }
 
     def interface(self):
@@ -101,12 +103,35 @@ class Controller:
 
     def show_inventory(self):
         """Show the player's inventory"""
-        self.view.print([x.name for x in self.model.player.items])
+        for i, item in enumerate([x.name for x in self.model.player.items]):
+            self.view.print(f"{i}. {item}")
+        # self.view.print([x.name for x in self.model.player.items])
+    def show_equipment(self):
+        """Show the player's inventory"""
+        for i, item in enumerate([x.name for x in self.model.player.equipment]):
+            self.view.print(f"{i}. {item}")
+
+    def equip_cmd(self):
+        """Interface command to equip an item from inventory."""
+        self.show_inventory()
+        try:
+            i = input("Which item would you like to equip?")
+            i = int(i)
+            try:
+                self.equip(self.model.player, self.model.player.items[i])
+            except (ValueError, IndexError) as e:
+                if e is ValueError:
+                    self.view.print(f"{e} ({i})\nYou must select gear with an empty slot.")
+                else:
+                    self.view.print(f"{e} ({i})\nYou must select valid gear.")
+        except (ValueError):
+            self.view.print(f"You must enter a valid integer, not {i}.")
 
     def equip(self, creature, gear):
         # equip unique items per attaches slot
         if gear.attaches not in [x.attaches for x in creature.equipment]:
             creature.equipment.append(gear)
+            creature.items.remove(gear)
             creature.damage += gear.damage
             creature.armor += gear.armor
         else:
@@ -143,9 +168,9 @@ class Controller:
 
         if creature == self.model.player:
             # pick up gear
-            if creature.pos in [x.pos for x in self.model.floor_gear]:
-                gear = self.model.floor_gear[[x.pos for x in self.model.floor_gear].index(new_pos)]
-                self.model.floor_gear.remove(gear)
+            if creature.pos in [x.pos for x in self.model.floor_items]:
+                gear = self.model.floor_items[[x.pos for x in self.model.floor_items].index(new_pos)]
+                self.model.floor_items.remove(gear)
                 self.model.player.items.append(gear)
 
 
@@ -167,7 +192,7 @@ class Controller:
             self.view.print(f"{other_creature} dies!")
             dropped_gear = random.choice(g.gear_list)()
             dropped_gear.pos = copy.copy(other_creature.pos)
-            self.model.floor_gear.append(dropped_gear)
+            self.model.floor_items.append(dropped_gear)
             self.model.creatures.remove(other_creature)
             self.model.player.score += 1
         if self.model.player.hp < 0:
@@ -181,7 +206,7 @@ class View:
     def print_board(self):
         """Display everything in the room."""
         board_show = copy.copy(self.model.board)
-        for item in self.model.floor_gear:
+        for item in self.model.floor_items:
             board_show[item.pos] = item
         for creature in self.model.creatures:
             board_show[creature.pos] = creature
@@ -200,25 +225,15 @@ if __name__ == "__main__":
     controller = Controller(model=model, view=view)
 
     # Setup
-    # assert len(model.floor_gear) == 0
-    # sword = g.Sword()
-    # shield = g.Shield()
-    # controller.equip(model.player, sword)
-    # controller.equip(model.player, shield)
-    # controller.create_creature()
-    # model.creatures[-1].pos = (3, 2)
-    # view.print_board()
-    # controller.move_toward(model.player, model.creatures[1])
-    # controller.move_toward(model.player, model.creatures[1])
-    # controller.move_toward(model.player, model.creatures[1])
-    # assert len(model.floor_gear) == 1
-    # assert model.floor_gear[0].pos == (3,2)
+    # Test player equip_cmd()
 
     # Run game
     controller.populate_room()
     sword = g.Sword()
     shield = g.Shield()
-    controller.equip(model.player, sword)
+    # controller.equip(model.player, sword)
+    model.player.items.append(sword)
+    model.player.items.append(shield)
     controller.equip(model.player, shield)
 
     view.print_board()
