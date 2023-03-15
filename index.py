@@ -37,6 +37,7 @@ class Controller:
             "inv": self.show_inventory,
             "eq": self.show_equipment,
             "e": self.equip_cmd,
+            "u": self.unequip_cmd,
         }
         self.descriptions = {
             "w": "walk forward",
@@ -46,6 +47,7 @@ class Controller:
             "inv": "show inventory",
             "eq": "show equipped items",
             "e": "equip an item",
+            "u": "unequip an item",
         }
 
 
@@ -150,7 +152,7 @@ class Controller:
                 self.view.print(f"{e} ({i})\nYou must select valid gear.")
         except (ValueError):
             self.view.print(f"You must enter a valid integer, not {i}.")
-            
+
     def equip(self, creature, gear):
         # equip unique items per attaches slot
         if gear.attaches not in [x.attaches for x in creature.equipment]:
