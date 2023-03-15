@@ -155,6 +155,14 @@ class TestEmpty:
         self.controller.equip_cmd()
         assert t_weapon in self.model.player.equipment
 
+    def test_unequip_command(self):
+        t_weapon = g.TestWeapon()
+        index.input = lambda _: "0"
+        self.model.player.equipment.append(t_weapon)
+        # index.input = u.iter_cmds(["e", "0"])
+        self.controller.unequip_cmd()
+        assert t_weapon in self.model.player.items
+
 class TestPopulated:
     """These tests need a normal populated level."""
     def setup_method(self):

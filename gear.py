@@ -1,5 +1,7 @@
 from enum import Enum, auto
 class Attaches(Enum):
+    head = "head"
+    body = "body"
     r_hand = "right hand"
     l_hand = "left hand"
     test = "test"
@@ -46,6 +48,26 @@ class Shield(Gear):
     def __repr__(self):
         return "b"
 
+class Helm(Gear):
+    def __init__(self):
+        super().__init__()
+        self.armor = 5
+        self.name = "helmet"
+        self.attaches = Attaches.head
+
+    def __repr__(self):
+        return "h"
+
+class Breastplate(Gear):
+    def __init__(self):
+        super().__init__()
+        self.armor = 5
+        self.name = "breastplate"
+        self.attaches = Attaches.body
+
+    def __repr__(self):
+        return "a"
+
 class TestWeapon(Gear):
     def __init__(self):
         super().__init__()
@@ -53,4 +75,4 @@ class TestWeapon(Gear):
         self.name = "test_weapon"
 
 # This gear can spawn
-gear_list = [Sword, Shield]
+gear_list = [Sword, Shield, Helm, Breastplate]

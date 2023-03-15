@@ -38,6 +38,16 @@ class Controller:
             "eq": self.show_equipment,
             "e": self.equip_cmd,
         }
+        self.descriptions = {
+            "w": "walk forward",
+            "a": "walk left",
+            "s": "walk backward",
+            "d": "walk right",
+            "inv": "show inventory",
+            "eq": "show equipped items",
+            "e": "equip an item",
+        }
+
 
     def interface(self):
         name = input("Name your character:")
@@ -49,7 +59,7 @@ class Controller:
             if command == "help":
                 # Help output is updated somewhat manually. Don't forget!
                 for key, val in self.commands.items():
-                    print(f"{key}")
+                    print(f"{key}: {self.descriptions[key]}")
                 print("help")
                 print("exit")
 
@@ -127,6 +137,20 @@ class Controller:
         except (ValueError):
             self.view.print(f"You must enter a valid integer, not {i}.")
 
+    # TODO unequip
+    def unequip_cmd(self):
+        """Interface command to remove an item that is equipped."""
+        self.show_equipment()
+        try:
+            i = input("Which item would you like to remove?")
+            i = int(i)
+            try:
+                self.unequip(self.model.player, self.model.player.equipment[i])
+            except (IndexError) as e:
+                self.view.print(f"{e} ({i})\nYou must select valid gear.")
+        except (ValueError):
+            self.view.print(f"You must enter a valid integer, not {i}.")
+            
     def equip(self, creature, gear):
         # equip unique items per attaches slot
         if gear.attaches not in [x.attaches for x in creature.equipment]:
@@ -140,6 +164,7 @@ class Controller:
     def unequip(self, creature, gear):
         if gear in creature.equipment:
             creature.equipment.remove(gear)
+            creature.items.append(gear)
             creature.damage -= gear.damage
             creature.armor -= gear.armor
         else:
@@ -225,15 +250,13 @@ if __name__ == "__main__":
     controller = Controller(model=model, view=view)
 
     # Setup
-    # Test player equip_cmd()
-
     # Run game
     controller.populate_room()
     sword = g.Sword()
     shield = g.Shield()
-    # controller.equip(model.player, sword)
     model.player.items.append(sword)
     model.player.items.append(shield)
+    controller.equip(model.player, sword)
     controller.equip(model.player, shield)
 
     view.print_board()
