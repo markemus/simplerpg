@@ -30,10 +30,10 @@ class Controller:
         self.model = model
         self.view = view
         self.commands = {
-            "w": lambda: self.move(self.model.player, "w"),
-            "a": lambda: self.move(self.model.player, "a"),
-            "s": lambda: self.move(self.model.player, "s"),
-            "d": lambda: self.move(self.model.player, "d"),
+            "w": lambda: self.round(self.model.player, "w"),
+            "a": lambda: self.round(self.model.player, "a"),
+            "s": lambda: self.round(self.model.player, "s"),
+            "d": lambda: self.round(self.model.player, "d"),
             "inv": self.show_inventory,
             "eq": self.show_equipment,
             "e": self.equip_cmd,
@@ -81,7 +81,7 @@ class Controller:
 
     def create_creature(self):
         """Create a Creature and assign it a position."""
-        creature = c.Creature()
+        creature = random.choice(c.spawn_list)()
 
         # ensure unique positions
         while creature.pos in [x.pos for x in self.model.creatures]:
@@ -96,7 +96,7 @@ class Controller:
         n = random.randint(min, max)
         for c in range(1, n+1):
             self.create_creature()
-            self.model.creatures[-1].repr = str(c)
+            # self.model.creatures[-1].repr = str(c)
 
     def move_toward(self, creature, other_creature):
         """Move a creature one tile towards another creature."""
@@ -181,6 +181,7 @@ class Controller:
             "s": (1,0),
             "d": (0,1),
         }
+        # Move
         move = moves[wasd]
         new_pos = (creature.pos[0] + move[0], creature.pos[1] + move[1])
         # attack if position is occupied (and don't move)
@@ -193,13 +194,20 @@ class Controller:
         else:
             self.view.print("Invalid move.")
 
+    def pickup(self, creature):
         if creature == self.model.player:
             # pick up gear
             if creature.pos in [x.pos for x in self.model.floor_items]:
-                gear = self.model.floor_items[[x.pos for x in self.model.floor_items].index(new_pos)]
+                gear = self.model.floor_items[[x.pos for x in self.model.floor_items].index(creature.pos)]
                 self.model.floor_items.remove(gear)
                 self.model.player.items.append(gear)
 
+    def round(self, creature, wasd):
+        self.move(creature, wasd)
+        self.pickup(creature)
+        for agg_creature in [x for x in self.model.creatures if x.aggressive]:
+            self.view.print(f"{agg_creature} moves towards you!")
+            self.move_toward(agg_creature, self.model.player)
 
     def attack(self, other_creature):
         """damage should be calculated as a ratio between armor and damage, and applied to hp."""
@@ -217,9 +225,12 @@ class Controller:
         # Death
         if other_creature.hp < 0:
             self.view.print(f"{other_creature} dies!")
-            dropped_gear = random.choice(g.gear_list)()
-            dropped_gear.pos = copy.copy(other_creature.pos)
-            self.model.floor_items.append(dropped_gear)
+            # Flip a coin to determine if gear is dropped
+            flip = np.random.randint(0,2)
+            if flip:
+                dropped_gear = random.choice(g.gear_list)()
+                dropped_gear.pos = copy.copy(other_creature.pos)
+                self.model.floor_items.append(dropped_gear)
             self.model.creatures.remove(other_creature)
             self.model.player.score += 1
         if self.model.player.hp < 0:

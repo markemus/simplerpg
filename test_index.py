@@ -37,7 +37,7 @@ class TestEmpty:
         sword = g.Sword()
         sword.pos = (3,2)
         self.model.floor_items.append(sword)
-        self.controller.move(self.model.player, "w")
+        self.controller.round(self.model.player, "w")
         assert sword not in self.model.floor_items
         assert sword in self.model.player.items
 
