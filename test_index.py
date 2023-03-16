@@ -3,7 +3,6 @@ import pytest
 
 import creatures as c
 import gear as g
-import utils as u
 from unittest import mock
 from custom_exceptions import *
 
@@ -30,6 +29,11 @@ class TestEmpty:
         del self.view
         del self.controller
 
+    def test_turn_timer(self):
+        assert self.model.turn == 0
+        self.controller.round("a")
+        assert self.model.turn == 1
+
     # @pytest.mark.skip
     def test_pickup_gear(self):
         """The player should pick up gear when walking over it."""
@@ -37,7 +41,7 @@ class TestEmpty:
         sword = g.Sword()
         sword.pos = (3,2)
         self.model.floor_items.append(sword)
-        self.controller.round(self.model.player, "w")
+        self.controller.round("w")
         assert sword not in self.model.floor_items
         assert sword in self.model.player.items
 

@@ -6,7 +6,6 @@ import numpy as np
 
 import creatures as c
 import gear as g
-import utils as u
 from custom_exceptions import *
 
 # Globals
@@ -20,6 +19,9 @@ class Model:
         self.creatures = [self.player]
         self.board = np.zeros((5, 5), dtype=object)
         self.floor_items = []
+        # TODO global turn timer updated by player move()
+        # TODO potions have an expiry turn
+        self.turn = 0
 
     def add_creature(self, creature):
         self.creatures.append(creature)
@@ -30,10 +32,10 @@ class Controller:
         self.model = model
         self.view = view
         self.commands = {
-            "w": lambda: self.round(self.model.player, "w"),
-            "a": lambda: self.round(self.model.player, "a"),
-            "s": lambda: self.round(self.model.player, "s"),
-            "d": lambda: self.round(self.model.player, "d"),
+            "w": lambda: self.round("w"),
+            "a": lambda: self.round("a"),
+            "s": lambda: self.round("s"),
+            "d": lambda: self.round("d"),
             "inv": self.show_inventory,
             "eq": self.show_equipment,
             "e": self.equip_cmd,
@@ -195,6 +197,7 @@ class Controller:
             self.view.print("Invalid move.")
 
     def pickup(self, creature):
+        """Player picks up items that he's standing on."""
         if creature == self.model.player:
             # pick up gear
             if creature.pos in [x.pos for x in self.model.floor_items]:
@@ -202,12 +205,15 @@ class Controller:
                 self.model.floor_items.remove(gear)
                 self.model.player.items.append(gear)
 
-    def round(self, creature, wasd):
-        self.move(creature, wasd)
-        self.pickup(creature)
+
+    def round(self, wasd):
+        """Player move, pickup, attack, and have other creatures move."""
+        self.move(self.model.player, wasd)
+        self.pickup(self.model.player)
         for agg_creature in [x for x in self.model.creatures if x.aggressive]:
             self.view.print(f"{agg_creature} moves towards you!")
             self.move_toward(agg_creature, self.model.player)
+        self.model.turn += 1
 
     def attack(self, attacker, defender):
         """damage should be calculated as a ratio between armor and damage, and applied to hp."""

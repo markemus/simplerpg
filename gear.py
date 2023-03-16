@@ -18,6 +18,13 @@ class Gear:
         return "i"
 
 
+class TestWeapon(Gear):
+    def __init__(self):
+        super().__init__()
+        self.attaches = Attaches.test
+        self.name = "test_weapon"
+
+
 class Sword(Gear):
     def __init__(self):
         super().__init__()
@@ -68,11 +75,10 @@ class Breastplate(Gear):
     def __repr__(self):
         return "a"
 
-class TestWeapon(Gear):
+
+class Potion:
     def __init__(self):
-        super().__init__()
-        self.attaches = Attaches.test
-        self.name = "test_weapon"
+        usable = True
 
 # This gear can spawn
 gear_list = [Sword, Shield, Helm, Breastplate]
