@@ -7,6 +7,7 @@ class Creature:
         self.repr = "C"
         self.pos = (4,2)
         self.equipment = []
+        self.score = 0
 
     def __repr__(self):
         return self.repr

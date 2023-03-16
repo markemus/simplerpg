@@ -181,7 +181,7 @@ class TestPopulated:
         other_creature = self.model.creatures[1]
         other_hp = other_creature.hp
         player_hp = self.model.player.hp
-        self.controller.attack(other_creature)
+        self.controller.attack(self.model.player, other_creature)
         assert self.model.player.hp == player_hp - (other_creature.damage / self.model.player.armor)
         assert other_creature.hp == other_hp - (self.model.player.damage / other_creature.armor)
 
@@ -190,7 +190,7 @@ class TestPopulated:
         creature = c.Creature()
         self.model.creatures.append(creature)
         creature.hp = 1
-        self.controller.attack(other_creature=creature)
+        self.controller.attack(self.model.player, creature)
         assert creature not in self.model.creatures
 
     def test_input(self):

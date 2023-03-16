@@ -187,7 +187,7 @@ class Controller:
         # attack if position is occupied (and don't move)
         if new_pos in [x.pos for x in self.model.creatures]:
             other_creature = self.model.creatures[[x.pos for x in self.model.creatures].index(new_pos)]
-            self.attack(other_creature)
+            self.attack(creature, other_creature)
         # move instead of attacking
         elif (new_pos[0] >= 0 and new_pos[1] >= 0) and (new_pos[0] <= self.model.board.shape[0] - 1 and new_pos[1] <= self.model.board.shape[1] - 1):
             creature.pos = new_pos
@@ -209,31 +209,31 @@ class Controller:
             self.view.print(f"{agg_creature} moves towards you!")
             self.move_toward(agg_creature, self.model.player)
 
-    def attack(self, other_creature):
+    def attack(self, attacker, defender):
         """damage should be calculated as a ratio between armor and damage, and applied to hp."""
         # damage round
-        p_hp = self.model.player.hp
-        o_o_hp = other_creature.hp
-        self.model.player.hp -= (other_creature.damage / self.model.player.armor)
-        other_creature.hp -= (self.model.player.damage / other_creature.armor)
+        p_hp = attacker.hp
+        o_o_hp = defender.hp
+        attacker.hp -= (defender.damage / attacker.armor)
+        defender.hp -= (attacker.damage / defender.armor)
 
         # Report damage
-        self.view.print(f"You attack the {other_creature}!")
-        self.view.print(f"Damage: \nplayer:{round(p_hp - self.model.player.hp, 2)}\n{other_creature}: {round(o_o_hp - other_creature.hp, 2)}")
-        self.view.print(f"HP: \nplayer:{round(self.model.player.hp, 2)}\n{other_creature}: {round(other_creature.hp, 2)}")
+        self.view.print(f"{attacker} attacks the {defender}!")
+        self.view.print(f"Damage: \n{attacker}:{round(p_hp - self.model.player.hp, 2)}\n{defender}: {round(o_o_hp - defender.hp, 2)}")
+        self.view.print(f"HP: \n{attacker}:{round(self.model.player.hp, 2)}\n{defender}: {round(defender.hp, 2)}")
 
         # Death
-        if other_creature.hp < 0:
-            self.view.print(f"{other_creature} dies!")
+        if defender.hp < 0:
+            self.view.print(f"{defender} dies!")
             # Flip a coin to determine if gear is dropped
             flip = np.random.randint(0,2)
             if flip:
                 dropped_gear = random.choice(g.gear_list)()
-                dropped_gear.pos = copy.copy(other_creature.pos)
+                dropped_gear.pos = copy.copy(defender.pos)
                 self.model.floor_items.append(dropped_gear)
-            self.model.creatures.remove(other_creature)
-            self.model.player.score += 1
-        if self.model.player.hp < 0:
+            self.model.creatures.remove(defender)
+            attacker.score += 1
+        if (attacker == self.model.player and attacker.hp <= 0) or (defender == self.model.player and defender.hp <= 0):
             raise DeathError("YOU DIED")
 
 class View:
