@@ -1,3 +1,5 @@
+import unittest.mock
+
 import index
 import pytest
 
@@ -45,24 +47,36 @@ class TestEmpty:
         assert sword not in self.model.floor_items
         assert sword in self.model.player.items
 
-    # @pytest.mark.skip
+    # TODO use mock.patch to test the random drops.
+    @mock.patch("numpy.random.randint", unittest.mock.Mock(return_value=1))
+    # @mock.patch("numpy.random.randint", unittest.mock.Mock(side_effect=[0, 1]))
     def test_floor_items(self):
-        """Gear should be dropped on the floor."""
-        assert len(self.model.floor_items) == 0
+        """Gear should be dropped on the floor when flip lands heads, but not tails."""
+        # Create char
         sword = g.Sword()
         shield = g.Shield()
         self.model.player.items.append(sword)
         self.model.player.items.append(shield)
         self.controller.equip(self.model.player, sword)
         self.controller.equip(self.model.player, shield)
+
+        # TODO Should not drop item. Will need to change len(floor_items) to account for this.
+        assert len(self.model.floor_items) == 0
         self.controller.create_creature()
         self.model.creatures[-1].pos = (3, 2)
-        self.view.print_board()
         self.controller.move_toward(self.model.player, self.model.creatures[1])
         self.controller.move_toward(self.model.player, self.model.creatures[1])
         self.controller.move_toward(self.model.player, self.model.creatures[1])
-        # assert len(self.model.floor_items) == 1
-        # assert self.model.floor_items[0].pos == (3,2)
+        assert len(self.model.floor_items) == 1
+
+        # Should drop item
+        self.controller.create_creature()
+        self.model.creatures[-1].pos = (3, 2)
+        self.controller.move_toward(self.model.player, self.model.creatures[1])
+        self.controller.move_toward(self.model.player, self.model.creatures[1])
+        self.controller.move_toward(self.model.player, self.model.creatures[1])
+        assert len(self.model.floor_items) == 2
+        assert self.model.floor_items[0].pos == (3,2)
 
     def test_move_towards(self):
         """Assure that creatures can move towards one another properly."""
@@ -153,7 +167,8 @@ class TestEmpty:
     # @mock.patch("index.input", side_effects=["0"])
     def test_equip_command(self):
         t_weapon = g.TestWeapon()
-        index.input = lambda _: "0"
+        # index.input = lambda _: "0"
+        index.input = unittest.mock.Mock(side_effect=[0])
         self.model.player.items.append(t_weapon)
         # index.input = u.iter_cmds(["e", "0"])
         self.controller.equip_cmd()

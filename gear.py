@@ -9,10 +9,12 @@ class Attaches(Enum):
 
 class Gear:
     def __init__(self):
+        self.name = "gear"
         self.damage = 0
         self.armor = 0
         self.pos = None
-        self.attaches = None
+        self.attaches = False
+        self.usable = False
 
     def __repr__(self):
         return "i"
@@ -76,9 +78,27 @@ class Breastplate(Gear):
         return "a"
 
 
-class Potion:
+class Potion(Gear):
     def __init__(self):
-        usable = True
+        super().__init__()
+        self.name = "potion"
+        self.usable = True
+        # Will expire immediately
+        self.turntimer = 0
+
+    def take_effect(self, creature):
+        """This effect occurs when potion is taken."""
+        pass
+
+
+class HealthPotion(Potion):
+    def __init__(self):
+        super().__init__()
+        self.name = "Potion of Health"
+
+    def take_effect(self, creature):
+        creature.hp += 10
+
 
 # This gear can spawn
-gear_list = [Sword, Shield, Helm, Breastplate]
+gear_list = [Sword, Shield, Helm, Breastplate, HealthPotion]

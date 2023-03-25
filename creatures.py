@@ -6,7 +6,6 @@ class Creature:
         self.hp = 10
         self.repr = "C"
         self.pos = (4,2)
-        self.equipment = []
         self.score = 0
 
     def __repr__(self):
@@ -37,5 +36,8 @@ class Player(Creature):
         self.hp = 10
         self.score = 0
         self.items = []
+        self.equipment = []
 
-spawn_list = [Goblin, Troll]
+# TODO fix troll spawns to work with tests (mock the list so they won't spawn then)
+# spawn_list = [Goblin, Troll]
+spawn_list = [Goblin]

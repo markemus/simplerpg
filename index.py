@@ -40,6 +40,7 @@ class Controller:
             "eq": self.show_equipment,
             "e": self.equip_cmd,
             "u": self.unequip_cmd,
+            "q": self.quaff_cmd,
         }
         self.descriptions = {
             "w": "walk forward",
@@ -50,6 +51,7 @@ class Controller:
             "eq": "show equipped items",
             "e": "equip an item",
             "u": "unequip an item",
+            "q": "quaff a potion",
         }
 
 
@@ -141,7 +143,6 @@ class Controller:
         except (ValueError):
             self.view.print(f"You must enter a valid integer, not {i}.")
 
-    # TODO unequip
     def unequip_cmd(self):
         """Interface command to remove an item that is equipped."""
         self.show_equipment()
@@ -173,6 +174,32 @@ class Controller:
             creature.armor -= gear.armor
         else:
             raise ValueError("gear is not equipped!")
+
+        # TODO quaff a potion
+    def quaff_cmd(self):
+        """Interface command to equip an item from inventory."""
+        self.show_inventory()
+        try:
+            i = input("Which item would you like to quaff?")
+            i = int(i)
+            try:
+                self.quaff(self.model.player, self.model.player.items[i])
+            except (ValueError, IndexError) as e:
+                if e is ValueError:
+                    self.view.print(f"{e} ({i})\nYou must select a potion.")
+                else:
+                    self.view.print(f"{e} ({i})\nYou must select a valid index.")
+        except (ValueError):
+            self.view.print(f"You must enter a valid integer, not {i}.")
+    def quaff(self, creature, potion):
+        if potion in creature.items:
+            creature.items.remove(potion)
+            # TODO active potions
+            # creature.active.append((potion, self.view.turn + potion.turntimer))
+            potion.take_effect(creature)
+        else:
+            raise ValueError("Potion is not in inventory!")
+
 
 
     def move(self, creature, wasd):
