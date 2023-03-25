@@ -136,10 +136,11 @@ class Controller:
             try:
                 self.equip(self.model.player, self.model.player.items[i])
             except (ValueError, IndexError) as e:
-                if e is ValueError:
-                    self.view.print(f"{e} ({i})\nYou must select gear with an empty slot.")
+                if isinstance(e, ValueError):
+                    self.view.print(e)
+                    self.view.print("Please select valid gear to equip.")
                 else:
-                    self.view.print(f"{e} ({i})\nYou must select valid gear.")
+                    self.view.print(f"{e} ({i})\nYou must select a valid slot.")
         except (ValueError):
             self.view.print(f"You must enter a valid integer, not {i}.")
 
@@ -158,7 +159,9 @@ class Controller:
 
     def equip(self, creature, gear):
         # equip unique items per attaches slot
-        if gear.attaches not in [x.attaches for x in creature.equipment]:
+        if gear.attaches == g.Attaches.noeq:
+            raise ValueError("Cannot equip this item!")
+        elif gear.attaches not in [x.attaches for x in creature.equipment]:
             creature.equipment.append(gear)
             creature.items.remove(gear)
             creature.damage += gear.damage
@@ -175,7 +178,6 @@ class Controller:
         else:
             raise ValueError("gear is not equipped!")
 
-        # TODO quaff a potion
     def quaff_cmd(self):
         """Interface command to equip an item from inventory."""
         self.show_inventory()
@@ -184,11 +186,11 @@ class Controller:
             i = int(i)
             try:
                 self.quaff(self.model.player, self.model.player.items[i])
-            except (ValueError, IndexError) as e:
-                if e is ValueError:
-                    self.view.print(f"{e} ({i})\nYou must select a potion.")
+            except (IndexError, AttributeError) as e:
+                if isinstance(e, AttributeError):
+                    self.view.print(f"{type(e)} {e} ({i})\nYou must select a potion.")
                 else:
-                    self.view.print(f"{e} ({i})\nYou must select a valid index.")
+                    self.view.print(f"{type(e)} {e} ({i})\nYou must select a valid index.")
         except (ValueError):
             self.view.print(f"You must enter a valid integer, not {i}.")
     def quaff(self, creature, potion):

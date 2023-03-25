@@ -5,6 +5,7 @@ class Attaches(Enum):
     r_hand = "right hand"
     l_hand = "left hand"
     test = "test"
+    noeq = "no_equip"
 
 
 class Gear:
@@ -95,6 +96,7 @@ class HealthPotion(Potion):
     def __init__(self):
         super().__init__()
         self.name = "Potion of Health"
+        self.attaches = Attaches.noeq
 
     def take_effect(self, creature):
         creature.hp += 10
