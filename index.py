@@ -1,8 +1,10 @@
 """A simple rpg. No pressure."""
 import copy
+import datetime
 import random
 
 import numpy as np
+import pandas as pd
 
 import creatures as c
 import gear as g
@@ -16,6 +18,7 @@ class Model:
     """Model should include all the data for the game."""
     def __init__(self):
         self.turn = 0
+        self.level = 1
         self.player = c.Player()
         # TODO potions have an expiry turn
         self.reset_board()
@@ -87,6 +90,14 @@ class Controller:
             else:
                 self.view.print("Command not recognized.")
             self.view.print_board()
+        else:
+            # game over, save score
+            high_scores = pd.read_csv("high_scores.tsv", sep="\t")
+            new_row = (self.model.player.score, self.model.player.name, datetime.date.today())
+            high_scores.loc[4] = new_row
+            high_scores = high_scores.sort_values(by="score", ascending=False).iloc[:3]
+            high_scores.to_csv("high_scores.tsv", sep="\t", index=False)
+            self.view.print(high_scores)
 
     def create_creature(self):
         """Create a Creature and assign it a position."""
@@ -125,12 +136,16 @@ class Controller:
         elif (new_pos[0] >= 0 and new_pos[1] >= 0) and (new_pos[0] <= self.model.board.shape[0] - 1 and new_pos[1] <= self.model.board.shape[1] - 1):
             creature.pos = new_pos
             # Exit if on exit
-            if (creature == self.model.player) and creature.pos == (0,2):
-                # Start a new level
-                self.model.reset_board()
-                self.populate_room()
+            if (creature == self.model.player) and creature.pos == (0, 2):
+                self.new_level()
         else:
             self.view.print("Invalid move.")
+
+    def new_level(self):
+        """Create and launch a new level."""
+        self.model.reset_board()
+        self.model.level += 1
+        self.populate_room()
 
     def pickup(self, creature):
         """Player picks up items that he's standing on."""
@@ -283,6 +298,7 @@ class Controller:
 class View:
     def __init__(self, model):
         self.model = model
+        # TODO replace print with https://stackoverflow.com/a/9996049
         self.print = print
 
     def print_board(self):
@@ -297,11 +313,12 @@ class View:
             board_show[creature.pos] = creature
         board_show[self.model.player.pos] = self.model.player
 
-
         # Print the board with header
         header = f"\n{self.model.player.name} HP:{round(self.model.player.hp,2)} DMG:{self.model.player.damage} ARM:{self.model.player.armor} SCORE:{self.model.player.score}"
         self.print(header)
-        self.print(board_show)
+        for row in board_show:
+            self.print(row)
+        self.print(f"level: {self.model.level}")
 
 
 # Main

@@ -60,7 +60,7 @@ class TestEmpty:
         self.controller.equip(self.model.player, sword)
         self.controller.equip(self.model.player, shield)
 
-        # TODO Should not drop item. Will need to change len(floor_items) to account for this.
+        # TODO After fix, first fight should not drop an item. Will need to change len(floor_items) to account for this.
         assert len(self.model.floor_items) == 0
         self.controller.create_creature()
         self.model.creatures[-1].pos = (3, 2)
@@ -77,6 +77,13 @@ class TestEmpty:
         self.controller.move_toward(self.model.player, self.model.creatures[1])
         assert len(self.model.floor_items) == 2
         assert self.model.floor_items[0].pos == (3,2)
+
+    def test_new_level(self):
+        """Test that a new level is entered when player steps on (0,2)."""
+        self.model.player.pos = (1,2)
+        assert self.model.level == 1
+        self.controller.move(self.model.player, "w")
+        assert self.model.level == 2
 
     def test_move_towards(self):
         """Assure that creatures can move towards one another properly."""
