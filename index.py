@@ -15,16 +15,21 @@ DEBUG = False
 class Model:
     """Model should include all the data for the game."""
     def __init__(self):
-        self.player = c.Player()
-        self.creatures = [self.player]
-        self.board = np.zeros((5, 5), dtype=object)
-        self.floor_items = []
-        # TODO global turn timer updated by player move()
-        # TODO potions have an expiry turn
         self.turn = 0
+        self.player = c.Player()
+        # TODO potions have an expiry turn
+        self.reset_board()
 
     def add_creature(self, creature):
         self.creatures.append(creature)
+
+    def reset_board(self):
+        """Remove all creatures except player (reset room)."""
+        self.creatures = [self.player]
+        self.board = np.zeros((5, 5), dtype=object)
+        self.floor_items = []
+        self.player.pos = (4,2)
+
 
 class Controller:
     """Controller should include all the functions for generating/advancing the game."""
@@ -100,7 +105,77 @@ class Controller:
         n = random.randint(min, max)
         for c in range(1, n+1):
             self.create_creature()
-            # self.model.creatures[-1].repr = str(c)
+
+    def move(self, creature, wasd):
+        """Move a creature one tile in any direction."""
+        moves = {
+            "w": (-1,0),
+            "a": (0,-1),
+            "s": (1,0),
+            "d": (0,1),
+        }
+        # Move
+        move = moves[wasd]
+        new_pos = (creature.pos[0] + move[0], creature.pos[1] + move[1])
+        # attack if position is occupied (and don't move)
+        if new_pos in [x.pos for x in self.model.creatures]:
+            other_creature = self.model.creatures[[x.pos for x in self.model.creatures].index(new_pos)]
+            self.attack(creature, other_creature)
+        # move instead of attacking
+        elif (new_pos[0] >= 0 and new_pos[1] >= 0) and (new_pos[0] <= self.model.board.shape[0] - 1 and new_pos[1] <= self.model.board.shape[1] - 1):
+            creature.pos = new_pos
+            # Exit if on exit
+            if (creature == self.model.player) and creature.pos == (0,2):
+                # Start a new level
+                self.model.reset_board()
+                self.populate_room()
+        else:
+            self.view.print("Invalid move.")
+
+    def pickup(self, creature):
+        """Player picks up items that he's standing on."""
+        if creature == self.model.player:
+            # pick up gear
+            if creature.pos in [x.pos for x in self.model.floor_items]:
+                gear = self.model.floor_items[[x.pos for x in self.model.floor_items].index(creature.pos)]
+                self.model.floor_items.remove(gear)
+                self.model.player.items.append(gear)
+
+    def round(self, wasd):
+        """Player move, pickup, attack, and have other creatures move."""
+        self.move(self.model.player, wasd)
+        self.pickup(self.model.player)
+        for agg_creature in [x for x in self.model.creatures if x.aggressive]:
+            self.view.print(f"{agg_creature} moves towards you!")
+            self.move_toward(agg_creature, self.model.player)
+        self.model.turn += 1
+
+    def attack(self, attacker, defender):
+        """damage should be calculated as a ratio between armor and damage, and applied to hp."""
+        # damage round
+        p_hp = attacker.hp
+        o_o_hp = defender.hp
+        attacker.hp -= (defender.damage / attacker.armor)
+        defender.hp -= (attacker.damage / defender.armor)
+
+        # Report damage
+        self.view.print(f"{attacker} attacks the {defender}!")
+        self.view.print(f"Damage: \n{attacker}:{round(p_hp - self.model.player.hp, 2)}\n{defender}: {round(o_o_hp - defender.hp, 2)}")
+        self.view.print(f"HP: \n{attacker}:{round(self.model.player.hp, 2)}\n{defender}: {round(defender.hp, 2)}")
+
+        # Death
+        if defender.hp < 0:
+            self.view.print(f"{defender} dies!")
+            # Flip a coin to determine if gear is dropped
+            flip = np.random.randint(0,2)
+            if flip:
+                dropped_gear = random.choice(g.gear_list)()
+                dropped_gear.pos = copy.copy(defender.pos)
+                self.model.floor_items.append(dropped_gear)
+            self.model.creatures.remove(defender)
+            attacker.score += 1
+        if (attacker == self.model.player and attacker.hp <= 0) or (defender == self.model.player and defender.hp <= 0):
+            raise DeathError("YOU DIED")
 
     def move_toward(self, creature, other_creature):
         """Move a creature one tile towards another creature."""
@@ -134,7 +209,9 @@ class Controller:
             i = input("Which item would you like to equip?")
             i = int(i)
             try:
-                self.equip(self.model.player, self.model.player.items[i])
+                item = self.model.player.items[i]
+                self.equip(self.model.player, item)
+                self.view.print(f"You equip the {item.name}.")
             except (ValueError, IndexError) as e:
                 if isinstance(e, ValueError):
                     self.view.print(e)
@@ -203,74 +280,6 @@ class Controller:
             raise ValueError("Potion is not in inventory!")
 
 
-
-    def move(self, creature, wasd):
-        """Move a creature one tile in any direction."""
-        moves = {
-            "w": (-1,0),
-            "a": (0,-1),
-            "s": (1,0),
-            "d": (0,1),
-        }
-        # Move
-        move = moves[wasd]
-        new_pos = (creature.pos[0] + move[0], creature.pos[1] + move[1])
-        # attack if position is occupied (and don't move)
-        if new_pos in [x.pos for x in self.model.creatures]:
-            other_creature = self.model.creatures[[x.pos for x in self.model.creatures].index(new_pos)]
-            self.attack(creature, other_creature)
-        # move instead of attacking
-        elif (new_pos[0] >= 0 and new_pos[1] >= 0) and (new_pos[0] <= self.model.board.shape[0] - 1 and new_pos[1] <= self.model.board.shape[1] - 1):
-            creature.pos = new_pos
-        else:
-            self.view.print("Invalid move.")
-
-    def pickup(self, creature):
-        """Player picks up items that he's standing on."""
-        if creature == self.model.player:
-            # pick up gear
-            if creature.pos in [x.pos for x in self.model.floor_items]:
-                gear = self.model.floor_items[[x.pos for x in self.model.floor_items].index(creature.pos)]
-                self.model.floor_items.remove(gear)
-                self.model.player.items.append(gear)
-
-
-    def round(self, wasd):
-        """Player move, pickup, attack, and have other creatures move."""
-        self.move(self.model.player, wasd)
-        self.pickup(self.model.player)
-        for agg_creature in [x for x in self.model.creatures if x.aggressive]:
-            self.view.print(f"{agg_creature} moves towards you!")
-            self.move_toward(agg_creature, self.model.player)
-        self.model.turn += 1
-
-    def attack(self, attacker, defender):
-        """damage should be calculated as a ratio between armor and damage, and applied to hp."""
-        # damage round
-        p_hp = attacker.hp
-        o_o_hp = defender.hp
-        attacker.hp -= (defender.damage / attacker.armor)
-        defender.hp -= (attacker.damage / defender.armor)
-
-        # Report damage
-        self.view.print(f"{attacker} attacks the {defender}!")
-        self.view.print(f"Damage: \n{attacker}:{round(p_hp - self.model.player.hp, 2)}\n{defender}: {round(o_o_hp - defender.hp, 2)}")
-        self.view.print(f"HP: \n{attacker}:{round(self.model.player.hp, 2)}\n{defender}: {round(defender.hp, 2)}")
-
-        # Death
-        if defender.hp < 0:
-            self.view.print(f"{defender} dies!")
-            # Flip a coin to determine if gear is dropped
-            flip = np.random.randint(0,2)
-            if flip:
-                dropped_gear = random.choice(g.gear_list)()
-                dropped_gear.pos = copy.copy(defender.pos)
-                self.model.floor_items.append(dropped_gear)
-            self.model.creatures.remove(defender)
-            attacker.score += 1
-        if (attacker == self.model.player and attacker.hp <= 0) or (defender == self.model.player and defender.hp <= 0):
-            raise DeathError("YOU DIED")
-
 class View:
     def __init__(self, model):
         self.model = model
@@ -279,11 +288,15 @@ class View:
     def print_board(self):
         """Display everything in the room."""
         board_show = copy.copy(self.model.board)
+        board_show[4, 2] = 1
+        board_show[0, 2] = 9
+
         for item in self.model.floor_items:
             board_show[item.pos] = item
         for creature in self.model.creatures:
             board_show[creature.pos] = creature
         board_show[self.model.player.pos] = self.model.player
+
 
         # Print the board with header
         header = f"\n{self.model.player.name} HP:{round(self.model.player.hp,2)} DMG:{self.model.player.damage} ARM:{self.model.player.armor} SCORE:{self.model.player.score}"
