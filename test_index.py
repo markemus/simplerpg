@@ -85,6 +85,14 @@ class TestEmpty:
         self.controller.move(self.model.player, "w")
         assert self.model.level == 2
 
+    def test_end_game(self):
+        """Test that the game ends with a DeathError."""
+        self.model.level = 9
+        self.model.player.pos = (1, 2)
+        with pytest.raises(DeathError):
+            self.controller.move(self.model.player, "w")
+
+
     def test_move_towards(self):
         """Assure that creatures can move towards one another properly."""
         # Place player in center of room

@@ -145,7 +145,16 @@ class Controller:
         """Create and launch a new level."""
         self.model.reset_board()
         self.model.level += 1
-        self.populate_room()
+        if self.model.level == 10:
+            raise DeathError("""
+    ---------------------------------
+    | You reached the Level of Fire |
+    |     You are enlightened!      |
+    ---------------------------------
+YOU DIED
+            """)
+        else:
+            self.populate_room()
 
     def pickup(self, creature):
         """Player picks up items that he's standing on."""
@@ -301,6 +310,16 @@ class View:
         # TODO replace print with https://stackoverflow.com/a/9996049
         self.print = print
 
+    def new_game_screen(self):
+        self.print(
+            """
+    ---------------------------
+    | Reach the Level of Fire |
+    | and find enlightenment! |
+    ---------------------------
+            """
+        )
+
     def print_board(self):
         """Display everything in the room."""
         board_show = copy.copy(self.model.board)
@@ -337,6 +356,7 @@ if __name__ == "__main__":
     controller.equip(model.player, sword)
     controller.equip(model.player, shield)
 
+    view.new_game_screen()
     view.print_board()
     controller.interface()
 
